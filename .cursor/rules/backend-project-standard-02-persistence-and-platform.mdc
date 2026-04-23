@@ -1,0 +1,100 @@
+---
+description: Backend standard — MongoDB/Mongoose schema design, queries, integrations, idempotency, config, timezones, errors, logging, Docker, verification, new-feature workflow
+alwaysApply: true
+---
+
+# Backend Project Standard (Part 2 — Persistence, Integrations, and Operations)
+
+## Database and access layer (defaults)
+
+- Default database: **MongoDB**. Default access: **Mongoose** via `@nestjs/mongoose`. Do not introduce Prisma, TypeORM, Sequelize, Drizzle, raw SQL, or a second ORM stack unless the user explicitly approves. Feature modules own their schemas and boundaries.
+
+## Persistence placement and modeling
+
+- Schemas, models, or entities live in the **owning** feature. Indexes colocated with the schema. Embedded subdocuments with parent. Use hidden / non-selected fields for internal-only data. Use timestamps if the project standard does. Uniqueness: **database** (schema/indexes), not only service checks; services may pre-check for clearer errors. Name persistence to match the domain. Resolve parents before child reads/writes. Prefer queries scoped by parent, not unbounded global lookups. Transactions for cascading deletes, batches, and multi-doc consistency. Do not put domain models in `common/` unless genuinely shared. Avoid “magic” persistence that obscures where writes happen.
+
+## Mongoose schema definition style
+
+- Top-level models: NestJS Mongoose **classes** with `@Schema()` and `@Prop()`. Export `HydratedDocument<T>`. Export schema with `SchemaFactory.createForClass`. One main schema per file; tiny **local** embedded helper schemas in the same file are OK if tightly coupled.
+- Class names: singular for aggregates, e.g. `Event`, `Provision`, `Participant`, `Workshop`, `Feedback`.
+- Use **explicit** `type` in `@Prop()` when the shape matters; do not rely on fragile inference. Prefer `@Schema({ timestamps: true })` on top-level. Embedded schemas: `@Schema({ _id: false })` when the subdoc should not have its own id.
+
+## Field design
+
+- Every persisted field has an intentional shape, validation, and default. Use `required: [true, "message"]` or conditional required where appropriate. Use `trim`, `lowercase`, `enum`, `match`, and custom validators in the schema when the invariant is **of the stored data**. Keep validation messages stable and machine-friendly. `default: undefined` for optional fields when that yields cleaner docs. Computed defaults only when deterministic and part of the model. Prefer explicit booleans (e.g. `default: false`) over absent-field semantics for flags.
+
+## IDs, references, and relationships
+
+- Use Mongo `ObjectId` refs between aggregates/major children unless a different id type is clearly justified. Parent refs named `<parent>Id` (e.g. `eventId`, `provisionId`, `workshopId`). Set `ref: "<ModelName>"` explicitly. UUID fields for idempotency keys and special internal ids where appropriate. `select: false` for sensitive internal fields (e.g. idempotency keys) when they must not appear in default reads. **Prefer parent-scoped queries** over global lookups. Prefer explicit loads in services over **populate**-heavy designs. Do not default to populate, virtual populate, or autopopulate.
+
+## Embedded vs dynamic
+
+- **Embedded** sub-schemas for tightly owned structures without their own lifecycle (entries, categories, targets, date ranges, form items). `type: [SubSchema]` for ordered arrays with known item shape. `type: Map` only for truly dynamic keys. For dynamic values, `Map` with explicit `of` when possible. `SchemaTypes.Mixed` only for variable leaf values that cannot be modeled otherwise; do not default to Mixed.
+
+## Validation layers
+
+- **Schema**: invariants of stored data (required, enum, format, parent-scoped uniqueness via indexes, embedded array validity, etc.). **DTOs**: request shape at the boundary. **Services**: workflow and process rules. Schema validators protect **data quality**; they do not replace service orchestration.
+
+## Indexing and uniqueness
+
+- `unique: true` for single-field uniqueness. After `SchemaFactory.createForClass`, use `Schema.index(...)` for compound indexes. Compound uniqueness for parent-scoped uniques, e.g. `email + workshopId`. Add plain indexes for hot foreign keys and lookups. **Database** is the final uniqueness authority.
+
+## Query and mutation style
+
+- Child access through the parent when practical. For parent-scoped routes, ensure parent exists before child ops. Avoid models that need broad eager loading for common reads. Keep reads explicit. Direct updates for simple post-validation field updates; `save()` when document-level logic is clearer. Transactions for multi-doc atomic updates.
+
+## Schema safety (anti-patterns)
+
+- Do not hide important behavior in pre/post save hooks or plugins unless the project standardizes it. No autopopulate-by-default. Do not over-normalize into many tiny collections without clear query/lifecycle needs. No blind denormalization: embed for tight ownership, ref when lifecycle or cardinality fits.
+
+## Integrations and side effects
+
+- All third-party SDKs, HTTP calls, and vendor payload mapping live in a dedicated **integration** layer (e.g. `src/modules/integration/`). Domain services depend on **integration** services, not raw clients. **No** vendor field names in controllers or domain code. Read integration config only through the central config mechanism; fail fast with `getOrThrow` (or project equivalent) for required keys. **Order**: persist core business state before non-critical side effects. Fire-and-forget only when failure does not break the user flow; then catch, log, and report in the integration path. Expose business methods (`publishMessage`, `sendEmail`, `createBadge`, `generateUploadUrl`) rather than leaking raw vendor primitives, unless the repo standardizes otherwise. Make retry and idempotency behavior explicit, not hidden in one-off helpers.
+
+## Idempotency and retries
+
+- Use idempotency for retry-prone creates, webhooks, external triggers, and public forms that may resend. Key via standard decorator, middleware, or helper; validate key format at the boundary. Store key on the record or in an idempotency store; back with **unique index** or equivalent. Service may short-circuit for clarity; DB is the race backstop. Do not idempotent-wrap every endpoint—only where duplicate submission is a real risk.
+
+## Configuration and environment
+
+- **Central** configuration only. App code uses the config module or config service, not raw env reads in feature code. Required values: fail fast. Named, stable config keys. Wire env in application and integration layers, not buried in domain services. Derive and reuse often-used computed config once at a boundary.
+
+## Dates, times, and time zones
+
+- Date-only input is a **business** value, not a UTC instant. Do not parse `YYYY-MM-DD` with naive `Date` parsing unless the project explicitly defines that. Use business timezone and shared helpers (`date-fns-tz`). Be explicit for start-of-day and end-of-day. Persist instants in UTC (or the project’s documented standard). Centralize the canonical business timezone; do not scatter tz logic.
+
+## Error handling and public API shape
+
+- Use Nest and project-standard domain exceptions for expected failures. Global filters (or equivalent) map exceptions to HTTP. **Consistent** public error shape, typically: status, timestamp, path/action, stable message or code. **Never** expose to clients: stack traces, raw exception objects, vendor payloads, secrets, DB details. Rich detail may go to **logs** and **monitoring**. Filters translate responses; they do not replace service validation. If an integration fails in a “soft” way, log/monitor without leaking vendor details.
+
+## Logging and observability
+
+- Log operational failures at the point of failure. Send unexpected errors to the project’s monitor (e.g. Sentry) when present. Integrations log vendor failures with **debuggable** context. **No** secrets, tokens, passwords, or full sensitive payloads. Prefer structured, contextual logs. Public responses stay clean.
+
+## Dockerization (when this standard applies to the repo)
+
+- Provide a repo-root `Dockerfile` and `.dockerignore`. One main image per backend service; one process per container unless the user needs otherwise. Favor a **simple**, readable Dockerfile; **single-stage** by default; multi-stage only for clear build/runtime wins. **Official Node LTS**—prefer `node:<lts>-slim` for compatibility. Alpine only when image size justifies it and native deps are verified. **Layer caching**: copy lockfiles and manifests first; `npm ci` when a lockfile exists. Copy only what the build and runtime need. `CMD` uses the project’s production start (e.g. `npm run start:prod`). **No** hardcoded app secrets in the image. `.dockerignore` at minimum: `.git`, `node_modules`, local env files, coverage, caches, editor metadata. **docker-compose** (or similar) only when the backend truly needs local multi-service orchestration (DB, queue, etc.); not by default for a single service.
+
+## Verification and definition of done
+
+- Done means **wired** correctly, **structurally** consistent, and **verified** with the repo’s actual commands—not “looks right.” **Discover** commands before running. Prefer the **narrowest** meaningful check; widen for cross-cutting or risky changes. If tests are stale or commented out, do not treat them as spec. **Never** claim lint/tests/build passed without running them. For module wiring, DTO, schema, guard, or contract changes, exercise the **highest-risk** part, not only the fastest script.
+
+## Preferred workflow: new feature
+
+1. `src/modules/<feature>/` with `dto/`, `schemas/`, module, controller, service.
+2. Add guards only for route entry control the feature needs.
+3. Register models in the **feature** module; import the feature in the root module.
+4. Business logic in **services**; external calls in **integration** services.
+5. Add targeted verification.
+
+**New child resource:** under parent; scope by parent aggregate; align permission boundary; promote to a top-level module only if the domain is truly independent.
+
+**Refactors:** keep behavior and public contracts unless the task says otherwise. Strengthen the existing architecture; do not add a second competing architecture.
+
+## Practical priority order (repeated for cross-file context)
+
+1. User requirements and correctness.
+2. Existing runtime behavior unless the user changes it.
+3. Local established patterns.
+4. This standard for **new** work.
+5. Simpler, maintainable code over clever abstractions.

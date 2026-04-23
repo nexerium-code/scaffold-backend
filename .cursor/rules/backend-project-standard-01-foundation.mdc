@@ -1,0 +1,160 @@
+---
+description: Backend standard — instruction model, operations, NestJS stack, architecture, layout, modules, controllers, services, auth, DTOs, naming, style, shared code, forbidden patterns, priority
+alwaysApply: true
+---
+
+# Backend Project Standard (Part 1 — Foundation and Application Layer)
+
+These rules are reusable defaults for TypeScript backend work in Cursor. The live codebase is the source of truth for current runtime behavior; these rules are the target engineering standard. When they differ: for narrow edits in an existing area, preserve behavior and match local patterns unless clearly broken. For new modules, new files, or deliberate refactors, follow this standard.
+
+## Instruction model (Cursor)
+
+- Use `.cursor/rules/` as the canonical place for this engineering standard. Keep rules maintainable: prefer clear sections over duplicate copies of the same policy across many files.
+- Do not add redundant instruction layers (nested `AGENTS.md` trees, duplicate rule sets, or assistant-specific override trees) unless the user explicitly requests them.
+- Do not assume global Cursor or editor settings define architecture; repository rules and the codebase do.
+- Treat other instruction locations (e.g. `.claude/`, ad hoc `TEAM_GUIDE.md`, legacy docs) as non-authoritative unless the user points to them for a specific task.
+- When the same topic appears in chat and in rules, follow explicit user instructions in the current task, then these rules, then the existing codebase’s patterns.
+
+## Operating rules (agent behavior)
+
+- Read before editing: open and inspect the nearest relevant files; start from the real implementation, not assumptions.
+- Prefer the smallest change that fully solves the task; avoid scope creep and unrelated refactors.
+- Follow the existing project structure with maximum fidelity: folder placement, file naming, wiring, layering, and local patterns. Do not introduce a second parallel pattern when one stable pattern already exists.
+- Preserve behavior unless the user explicitly requests a behavior change.
+- Prefer explicit, boring, maintainable code over clever abstractions. Do not add indirection, generic infrastructure, factories, base classes, or “utility for reuse we might need” unless the current task needs it.
+- When a rule is framework-agnostic, apply the same boundary using the stack’s native mechanism (NestJS modules, guards, pipes, filters, etc.).
+- Use the repo’s TypeScript config, path aliases, and established import style.
+- Discover verification from `package.json`, `Makefile`, `justfile`, CI config, and task runners; use those scripts instead of inventing ad hoc commands.
+- Prefer official documentation for the framework and primary libraries over blogs or guesswork. For OpenAI- or provider-specific work, use current official docs (and project MCPs if available).
+
+## Framework
+
+- New backend work under this standard uses **NestJS** only. Do not introduce a different backend framework or a parallel stack (raw Express-only apps, Fastify without Nest, Hono, Adonis, Next.js API routes as the main backend, ad hoc HTTP servers) unless the user explicitly requires a framework change.
+- Use NestJS-native patterns for modules, controllers, providers, guards, decorators, pipes, filters, and exception handling. When uncertain, check NestJS official docs and prefer Nest-native solutions first.
+
+## Default library stack (do not swap casually)
+
+| Concern              | Default                                                                                  | Rules                                                                                                                                                                                                                                                           |
+| -------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Language             | `typescript`                                                                             | Entire backend in TypeScript.                                                                                                                                                                                                                                   |
+| HTTP app             | `@nestjs/common`, `@nestjs/core`, `@nestjs/platform-express`                             | Base for HTTP, providers, filters, bootstrap.                                                                                                                                                                                                                   |
+| Runtime              | `reflect-metadata`, `rxjs`                                                               | Treat as framework infrastructure.                                                                                                                                                                                                                              |
+| Config               | `@nestjs/config`                                                                         | Centralized config; fail-fast reads. **No** scattered `process.env` or ad hoc env parsing in feature code.                                                                                                                                                      |
+| DB                   | `mongoose` + `@nestjs/mongoose` + `mongodb` (driver)                                     | Default persistence. Register models in the owning feature module with `MongooseModule.forFeature(...)`. Use raw driver only when Mongoose is insufficient.                                                                                                     |
+| Request validation   | `class-validator` + `class-transformer` + `@nestjs/mapped-types`                         | DTOs at the boundary. Zod is allowed for dynamic or composed runtime schemas; do not default to Zod for ordinary DTO validation when class-validator is enough.                                                                                                 |
+| AuthN                | `passport`, `@nestjs/passport`, `passport-jwt`, `@nestjs/jwt`                            | JWT validation integrated with Nest. **Clerk** is the default external identity provider: Clerk issues tokens; the backend validates and authorizes. No second auth stack unless requested. `bcrypt` only if the backend actually stores local password hashes. |
+| HTTP hardening       | `helmet`, `@nestjs/throttler`                                                            | Default security headers and throttling. `cookie-parser` only if cookies are actually read.                                                                                                                                                                     |
+| Dates                | `date-fns-tz`                                                                            | Business timezone and date-only semantics; do not use naive `Date` parsing for business dates when tz matters.                                                                                                                                                  |
+| Outbound HTTP        | `axios`                                                                                  | Keep in the integration layer, not controllers.                                                                                                                                                                                                                 |
+| AWS                  | AWS SDK v3: `@aws-sdk/client-s3`, `@aws-sdk/client-sqs`, `@aws-sdk/s3-request-presigner` | No legacy v2 monolith SDK patterns.                                                                                                                                                                                                                             |
+| Email (SendGrid)     | `@sendgrid/mail`                                                                         | Keep provider code in integration services.                                                                                                                                                                                                                     |
+| Observability        | `@sentry/nestjs`                                                                         | When the project includes monitoring.                                                                                                                                                                                                                           |
+| Test / lint / format | `jest`, `@nestjs/testing`, `ts-jest`, `eslint`, `typescript-eslint`, `prettier`          | Use project scripts.                                                                                                                                                                                                                                            |
+| **Not** default      | `@nestjs/microservices`                                                                  | No RPC/microservice decomposition unless the user requests an architecture change.                                                                                                                                                                              |
+| **Not** default      | `ai`, `@ai-sdk/openai`                                                                   | Only when the product actually includes that functionality.                                                                                                                                                                                                     |
+
+## Architecture baseline
+
+- **Modular monolith**: one deployable backend with clear internal module boundaries. No microservices split, RPC-first decomposition, or mixed architectural styles unless the user explicitly changes architecture.
+- One feature directory = one business domain or aggregate root. Shared cross-cutting code lives outside feature domains. Dedicated areas for: auth, third-party integration, and transport error shaping. Root app files = bootstrap and composition only.
+- Nest child resources under the parent when they share the same aggregate, auth boundary, or persistence boundary. New top-level features only for meaningfully separate domains. Do not use `common/` as a dump for “might reuse” code.
+
+## Preferred directory layout (default target)
+
+```text
+src/
+  main.ts
+  app.module.ts
+  app.controller.ts
+  app.service.ts
+  common/
+    constants/
+    decorators/
+    dto/
+    types/
+    utils/
+  filters/
+  modules/
+    auth/
+      decorators/
+      guards/
+      strategies/
+      types/
+      auth.module.ts
+    integration/
+      integration.module.ts
+      <vendor>.service.ts
+    <feature>/
+      dto/
+      schemas/
+      <feature>.module.ts
+      <feature>.controller.ts
+      <feature>.service.ts
+      <feature>.guard.ts
+      <child-resource>/
+        dto/
+        schemas/
+        <child-resource>.controller.ts
+        <child-resource>.service.ts
+        <child-resource>.guard.ts
+```
+
+- When editing existing code, match the local layout exactly unless the user requests a structural refactor. When creating new areas, use this shape unless the repo already has an established equivalent Nest pattern.
+
+## Root application files
+
+- `main.ts` (or bootstrap entry): startup, middleware, security headers, CORS, global validation, parsers; **no** feature business logic.
+- `app.module.ts`: top-level imports, globals, infrastructure; **no** feature-specific business rules.
+- `app.controller.ts` / `app.service.ts`: stay minimal; not a second domain layer. Global monitoring init stays at root; features stay unaware of setup details.
+
+## Module design
+
+- Each feature owns its controller, service, DTOs, schemas/models, and module wiring. Register Mongoose models in the **owning** feature module, not the root, unless the repo already standardizes global registration—then follow the repo.
+- Export only what other modules need. Depend on **exported feature services**, not internal files. Avoid exporting raw models across modules unless the repo already relies on that.
+- Keep child resources under the parent when not independently top-level. Avoid giant multi-domain features. No root-level horizontal `controllers/`, `services/`, `models/`; prefer feature colocation. Feature-local guards and feature-only helpers stay in the feature.
+
+## Controllers (thin transport)
+
+- Responsibilities: define route; bind params/query/body/headers/files; apply guards/decorators; call one service method; return the result or handle transport-specific response (stream, file download, SSE).
+- **No** business rules, **no** direct vendor calls, **no** multi-step orchestration (that belongs in services). Public routes use the project’s **public** / bypass mechanism. Reuse guards or a shared service for shared preconditions instead of copy-pasting checks. Keep method names aligned with the service; keep route param names stable when guards or services depend on them.
+
+## Services (orchestration and domain flow)
+
+- Own business logic, orchestration, and persistence flow; default home for state transitions. Load parent aggregates before acting on children; validate domain preconditions before writes.
+- Throw Nest (`HttpException` family, etc.) or project-standard domain exceptions for invalid operations.
+- Side-effect order: resolve dependencies and parents → validate access and state → durable writes → non-critical side effects → return. One primary use case per method; split oversized methods. Do not move main flow into schema hooks, ORM callbacks, or decorators unless the repo standardizes that. Prefer load → mutate → `save()` when document-level logic needs it; use direct updates when appropriate; use transactions for multi-write atomicity; always close/complete transactions on all paths, including errors. Do not run external side effects before the primary write succeeds unless the product explicitly requires that order.
+
+## Authentication and authorization
+
+- **Clerk** is the default provider: backend validates Clerk-issued JWTs; it does not issue primary identity. Flow: `Authorization: Bearer <token>` → JWT strategy → validate with configured Clerk signing key → **normalize** to one shared user shape (session id, user id, role, permissions, etc.).
+- Keep Clerk-specific parsing inside strategies. Controllers and domain services use **decorators or request helpers**, not raw JWT payload spread everywhere. Public routes: explicit marker. Coarse admin-only: dedicated admin guard. Resource-scoped checks: feature-local guards or policies **near** the feature.
+- **Guards** answer “may this request enter?”, not full domain workflows. Business-state checks (publish state, windows, parent-child, ownership) stay in **services**. If authorization depends on a route parameter, do not rename it without auditing all guards and services.
+
+## DTOs, validation, and API contracts
+
+- DTOs (or request schemas) at the transport boundary. Create DTOs = required create input; update DTOs = partial/derived from create via mapped types or equivalent. Local DTOs in features; only truly shared DTOs in a shared DTO area. Nest validation for nested objects. Strip/reject unknown fields when supported. Runtime validation beyond DTOs when shape is dynamic or config-driven. Public error strings: stable, machine-friendly (kebab-case or code-like). Do not change existing public error strings lightly if clients depend on them. Success responses: predictable; mutations may return a stable string; queries return structured data; special cases (upload, signed URL, stream, etc.) return explicit structured objects.
+
+## Naming and files
+
+- **kebab-case** filenames with dot role suffix: `<feature>.module.ts`, `<feature>.controller.ts`, `<feature>.service.ts`, `<feature>.guard.ts`, `<feature>.schema.ts`, `create-<feature>.dto.ts`, `update-<feature>.dto.ts`, `get-<purpose>.dto.ts`.
+- Singular vs plural for resources matches the **existing** local convention. **Prefer named exports** for new code; if an area uses default exports, do not churn to change them. Use `import type` for type-only imports when supported. Use the repo’s path aliases; use relative imports inside a small feature if that is the local standard. Avoid new barrel files unless the repo already uses them intentionally.
+
+## Code style and readability
+
+- Clarity over cleverness. Explicit branches for important business rules. Reasonable function length; do not split trivial code artificially. Comments for non-obvious intent, invariants, transaction boundaries, business rules—**not** line-by-line narration. Avoid `any` when a real type exists; if the repo relaxes a rule in a file, do not “fix” it opportunistically. No dead abstractions or one-off helpers that do not add clarity.
+
+## Shared code (`common/`)
+
+- Only **true** cross-module reuse, organized by intent: `constants`, `decorators`, `dto`, `types`, `utils`. **No** feature business logic. Promote to shared only when reuse is real and stable. Shared auth in `auth/`; shared vendors in `integration/`.
+
+## Forbidden patterns (change safety)
+
+- No second architecture beside the one in use. No casual structure drift. **No** business logic in controllers, guards, filters, or decorators. **No** direct vendor SDK calls from controllers or domain services. **No** `process.env` in domain code. **No** renames of route params, public error messages, DTO fields, or env keys without checking downstream. **No** mixed unrelated refactors in a feature task. **No** hidden persistence in hooks/middleware unless standardized. **No** feature models or feature auth rules in `common/`. **No** new top-level folders when an existing feature or shared area is correct. Do not treat stale or abandoned tests as the product spec.
+
+## Rule priority when rules conflict
+
+1. Correctness and explicit user requirements.
+2. Preserve real runtime behavior unless change is requested.
+3. Established pattern in the area being changed.
+4. For **new** work, this document’s target architecture.
+5. Simpler, more maintainable code over clever or generic code.
