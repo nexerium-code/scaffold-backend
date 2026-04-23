@@ -9,13 +9,13 @@ export class ExampleStandaloneController {
     constructor(private readonly exampleStandaloneService: ExampleStandaloneService) {}
 
     @Get()
-    findAll() {
-        return this.exampleStandaloneService.findAll();
+    list() {
+        return this.exampleStandaloneService.list();
     }
 
     @Get(":id")
-    findOne(@Param("id") id: string) {
-        return this.exampleStandaloneService.findOne(id);
+    getById(@Param("id") id: string) {
+        return this.exampleStandaloneService.getById(id);
     }
 
     @Post()
@@ -24,12 +24,12 @@ export class ExampleStandaloneController {
     }
 
     @Patch(":id")
-    update(@Param("id") id: string, @Body() dto: UpdateExampleRootDto) {
-        return this.exampleStandaloneService.update(id, dto);
+    updateById(@Param("id") id: string, @Body() dto: UpdateExampleRootDto) {
+        return this.exampleStandaloneService.updateById(id, dto);
     }
 
     @Delete(":id")
-    remove(@Param("id") id: string) {
-        return this.exampleStandaloneService.remove(id);
+    removeById(@Param("id") id: string) {
+        return this.exampleStandaloneService.removeById(id);
     }
 }

@@ -11,11 +11,11 @@ import { ExampleRoot, ExampleRootDocument } from "./schemas/example-root.schema"
 export class ExampleStandaloneService {
     constructor(@InjectModel(ExampleRoot.name) private readonly exampleRootModel: Model<ExampleRootDocument>) {}
 
-    async findAll() {
+    async list() {
         return this.exampleRootModel.find().exec();
     }
 
-    async findOne(id: string) {
+    async getById(id: string) {
         const doc = await this.exampleRootModel.findById(id).exec();
         if (!doc) throw new NotFoundException("example-root-not-found");
         return doc;
@@ -25,13 +25,13 @@ export class ExampleStandaloneService {
         return this.exampleRootModel.create(dto);
     }
 
-    async update(id: string, dto: UpdateExampleRootDto) {
+    async updateById(id: string, dto: UpdateExampleRootDto) {
         const doc = await this.exampleRootModel.findByIdAndUpdate(id, dto, { new: true }).exec();
         if (!doc) throw new NotFoundException("example-root-not-found");
         return doc;
     }
 
-    async remove(id: string) {
+    async removeById(id: string) {
         const res = await this.exampleRootModel.findByIdAndDelete(id).exec();
         if (!res) throw new NotFoundException("example-root-not-found");
     }

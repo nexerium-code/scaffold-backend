@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class AppService {
-    getHealth() {
+    getHealthStatus() {
         return "*** Sideproject BE Running ***";
     }
 }

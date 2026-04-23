@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
 
 import { CreateExampleNestedDto } from "./dto/create-example-nested.dto";
 import { UpdateExampleNestedDto } from "./dto/update-example-nested.dto";
@@ -9,13 +9,13 @@ export class ExampleNestedController {
     constructor(private readonly exampleNestedService: ExampleNestedService) {}
 
     @Get()
-    findAll() {
-        return this.exampleNestedService.findAll();
+    list() {
+        return this.exampleNestedService.list();
     }
 
     @Get(":id")
-    findOne(@Param("id") id: string) {
-        return this.exampleNestedService.findOne(id);
+    getById(@Param("id") id: string) {
+        return this.exampleNestedService.getById(id);
     }
 
     @Post()
@@ -24,12 +24,12 @@ export class ExampleNestedController {
     }
 
     @Patch(":id")
-    update(@Param("id") id: string, @Body() dto: UpdateExampleNestedDto) {
-        return this.exampleNestedService.update(id, dto);
+    updateById(@Param("id") id: string, @Body() dto: UpdateExampleNestedDto) {
+        return this.exampleNestedService.updateById(id, dto);
     }
 
     @Delete(":id")
-    remove(@Param("id") id: string) {
-        return this.exampleNestedService.remove(id);
+    removeById(@Param("id") id: string) {
+        return this.exampleNestedService.removeById(id);
     }
 }

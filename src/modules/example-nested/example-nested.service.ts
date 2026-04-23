@@ -11,11 +11,11 @@ import { ExampleNested, ExampleNestedDocument } from "./schemas/example-nested.s
 export class ExampleNestedService {
     constructor(@InjectModel(ExampleNested.name) private readonly exampleNestedModel: Model<ExampleNestedDocument>) {}
 
-    async findAll() {
+    async list() {
         return this.exampleNestedModel.find().exec();
     }
 
-    async findOne(id: string) {
+    async getById(id: string) {
         const doc = await this.exampleNestedModel.findById(id).exec();
         if (!doc) throw new NotFoundException("example-nested-not-found");
         return doc;
@@ -25,13 +25,13 @@ export class ExampleNestedService {
         return this.exampleNestedModel.create(dto);
     }
 
-    async update(id: string, dto: UpdateExampleNestedDto) {
+    async updateById(id: string, dto: UpdateExampleNestedDto) {
         const doc = await this.exampleNestedModel.findByIdAndUpdate(id, dto, { new: true }).exec();
         if (!doc) throw new NotFoundException("example-nested-not-found");
         return doc;
     }
 
-    async remove(id: string) {
+    async removeById(id: string) {
         const res = await this.exampleNestedModel.findByIdAndDelete(id).exec();
         if (!res) throw new NotFoundException("example-nested-not-found");
     }

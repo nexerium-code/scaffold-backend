@@ -9,7 +9,7 @@ export class AppController {
 
     @Public()
     @Get("health")
-    getHealth() {
-        return this.appService.getHealth();
+    getHealthStatus() {
+        return this.appService.getHealthStatus();
     }
 }
