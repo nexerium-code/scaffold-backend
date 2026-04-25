@@ -9,8 +9,8 @@ export class ExampleNestedController {
     constructor(private readonly exampleNestedService: ExampleNestedService) {}
 
     @Get()
-    list() {
-        return this.exampleNestedService.list();
+    getAll() {
+        return this.exampleNestedService.getAll();
     }
 
     @Get(":id")
@@ -24,12 +24,12 @@ export class ExampleNestedController {
     }
 
     @Patch(":id")
-    updateById(@Param("id") id: string, @Body() dto: UpdateExampleNestedDto) {
-        return this.exampleNestedService.updateById(id, dto);
+    update(@Param("id") id: string, @Body() dto: UpdateExampleNestedDto) {
+        return this.exampleNestedService.update(id, dto);
     }
 
     @Delete(":id")
-    removeById(@Param("id") id: string) {
-        return this.exampleNestedService.removeById(id);
+    delete(@Param("id") id: string) {
+        return this.exampleNestedService.delete(id);
     }
 }
