@@ -1,4 +1,4 @@
-# {Name} Managment Modular Monolith
+# {Name}
 
 > {Description}
 
@@ -13,7 +13,7 @@
 
 ## Overview
 
-This backed provides a complete event management modular monolith with the following aspects:
+This backend provides a complete {Description} modular monolith with the following aspects:
 
 - **{Aspects}**
 
