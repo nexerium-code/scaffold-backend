@@ -5,14 +5,14 @@ All third-party SDK access, vendor HTTP calls, and raw vendor payload mapping li
 ## 1 — Integration layer placement
 
 - Location: `src/modules/integration/`.
-- One **service per vendor**: `sqs.service.ts`, `s3.service.ts`, `sendgrid.service.ts`, `clerk.service.ts`, `openai.service.ts`, etc.
+- One **service per vendor**: `sqs.service.ts`, `s3.service.ts`, `resend.service.ts`, `clerk.service.ts`, `openai.service.ts`, etc.
 - One `integration.module.ts` that declares all integration services as providers and exports the ones other features consume.
 - Each integration service is `@Injectable()` and is injected into domain services through normal NestJS DI.
 
 ```ts
 @Module({
-    providers: [SqsService, S3Service, SendgridService],
-    exports: [SqsService, S3Service, SendgridService]
+    providers: [SqsService, S3Service, EmailService],
+    exports: [SqsService, S3Service, EmailService]
 })
 export class IntegrationModule {}
 ```
@@ -83,7 +83,7 @@ Do **not** trigger external side effects before the primary write succeeds unles
 
     ```ts
     void this.sqsService.publishMessage({ ... });
-    void this.sendgridService.sendEmail({ ... });
+    void this.emailService.sendEmail({ ... });
     ```
 
 - The integration service is responsible for its own error handling: `try/catch`, `this.logger.error(...)`, `captureException(err)`.
@@ -141,12 +141,12 @@ Do not force idempotency onto every mutation. Use it where duplicate submission 
 
 - All integration configuration flows through `ConfigService`.
 - Required keys use `ConfigService.getOrThrow<string>("KEY_NAME")` — fail fast at construction time.
-- Env var names follow the project convention (SCREAMING_SNAKE_CASE, vendor-prefixed): `AWS_REGION`, `SQS_QUEUE_URL`, `SENDGRID_API_KEY`, `CLERK_SECRET_KEY`, `S3_BUCKET_NAME`.
+- Env var names follow the project convention (SCREAMING_SNAKE_CASE, vendor-prefixed): `AWS_REGION`, `SQS_QUEUE_URL`, `RESEND_API_KEY`, `CLERK_SECRET_KEY`, `S3_BUCKET_NAME`.
 - See `rules/configuration-and-dates.md`.
 
 ## 9 — Forbidden patterns
 
-- ❌ Vendor SDK imports (`@aws-sdk/...`, `@sendgrid/mail`, `axios`, `openai`) inside controllers or domain services.
+- ❌ Vendor SDK imports (`@aws-sdk/...`, `resend`, `axios`, `openai`) inside controllers or domain services.
 - ❌ `process.env` reads inside integration services (go through `ConfigService`).
 - ❌ Vendor field names (`MessageAttributes`, `x-clerk-signature`, `Metadata.key`) leaking into controllers, DTOs, or domain services.
 - ❌ Side effects fired before the primary persistence write succeeds.

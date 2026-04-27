@@ -64,7 +64,7 @@ Backend projects governed by this standard run on NestJS. This file defines the 
 
 - **`axios`** — default HTTP client when no better official SDK exists. Keep it inside the integration layer; do not use it from controllers or domain services.
 - **`@aws-sdk/client-s3`, `@aws-sdk/client-sqs`, `@aws-sdk/s3-request-presigner`** — default AWS SDK family. Use AWS SDK v3 packages, not older monolithic SDK patterns.
-- **`@sendgrid/mail`** — default SendGrid client when SendGrid is the chosen email provider. Keep provider-specific code inside integration services.
+- **`resend`** — default Resend client when Resend is the chosen email provider. Keep provider-specific code inside integration services.
 - Add new vendor SDKs only inside `modules/integration/`. See `rules/integrations.md`.
 
 ## 10 — Observability

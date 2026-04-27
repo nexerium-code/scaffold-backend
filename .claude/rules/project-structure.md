@@ -143,7 +143,7 @@ src/
 ## 10 — Integration area (`modules/integration/`)
 
 - Single place for all third-party SDK access and raw HTTP integration code.
-- One vendor per service file: `sqs.service.ts`, `s3.service.ts`, `sendgrid.service.ts`, `clerk.service.ts`, etc.
+- One vendor per service file: `sqs.service.ts`, `s3.service.ts`, `email.service.ts`, `clerk.service.ts`, etc.
 - Domain services depend on integration services. Controllers and domain services never talk to vendor SDKs directly.
 - See `rules/integrations.md` for the full contract.
 

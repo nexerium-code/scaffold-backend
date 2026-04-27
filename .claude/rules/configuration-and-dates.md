@@ -35,8 +35,8 @@ export class AppModule {}
 
 ### 1.3 Env var naming
 
-- SCREAMING_SNAKE_CASE: `MONGO_URI`, `CLERK_SECRET_KEY`, `SENDGRID_API_KEY`, `SQS_QUEUE_URL`, `AWS_REGION`.
-- Vendor-prefixed: `AWS_*`, `CLERK_*`, `SENDGRID_*`, `SENTRY_*`.
+- SCREAMING_SNAKE_CASE: `MONGO_URI`, `CLERK_SECRET_KEY`, `RESEND_API_KEY`, `SQS_QUEUE_URL`, `AWS_REGION`.
+- Vendor-prefixed: `AWS_*`, `CLERK_*`, `RESEND_*`, `SENTRY_*`.
 - Stable. Do not rename an env var without auditing `ConfigService.get(...)` / `getOrThrow(...)` call sites and every deployment config (compose, k8s manifests, CI secrets).
 
 ### 1.4 Derived / computed config

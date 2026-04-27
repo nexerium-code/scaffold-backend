@@ -68,7 +68,7 @@ Services own business logic, orchestration, persistence flow, and coordination w
 
 - Services are the **default home for state transitions**.
 - Services are the only place where write orchestration, business-state validation, multi-document transactions, and domain workflows live.
-- Services depend on integration services (`SqsService`, `SendgridService`, `S3Service`, `ClerkService`) — never on raw vendor SDKs.
+- Services depend on integration services (`SqsService`, `EmailService`, `S3Service`, `ClerkService`) — never on raw vendor SDKs.
 - Services throw **framework-native NestJS exceptions** with kebab-case messages. See `rules/error-handling.md`.
 - Services use the repository's `Logger` with a context string: `new Logger("service-<feature>")`.
 

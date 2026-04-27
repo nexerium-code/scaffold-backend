@@ -129,8 +129,8 @@ Its purpose is to make backend projects converge on the same structure, naming, 
 - `@aws-sdk/client-s3`, `@aws-sdk/client-sqs`, `@aws-sdk/s3-request-presigner`
 - Default AWS SDK family when the backend integrates with AWS S3 or SQS.
 - Use AWS SDK v3 packages, not older monolithic SDK patterns.
-- `@sendgrid/mail`
-- Default SendGrid client when SendGrid is the chosen email provider.
+- `resend`
+- Default Resend client when Resend is the chosen email provider.
 - Keep provider-specific mail code inside integration services.
 
 ### Observability
