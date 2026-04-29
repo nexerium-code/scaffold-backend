@@ -1,4 +1,4 @@
-import { HydratedDocument, Schema as MongooseSchema } from "mongoose";
+import { HydratedDocument, Schema as MongooseSchema, Types } from "mongoose";
 
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 
@@ -9,7 +9,7 @@ export type ExampleNestedSubItemDocument = HydratedDocument<ExampleNestedSubItem
 @Schema({ timestamps: true })
 export class ExampleNestedSubItem {
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: "ExampleNested", required: true })
-    nestedId: MongooseSchema.Types.ObjectId;
+    nestedId: Types.ObjectId;
 
     @Prop({ type: String, required: true, trim: true })
     title: string;

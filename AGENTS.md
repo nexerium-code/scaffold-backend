@@ -396,6 +396,7 @@ src/
 - Keep one schema class per file unless a tiny embedded helper schema is tightly coupled and local.
 - Use singular schema class names such as `Event`, `Provision`, `Participant`, `Workshop`, and `Feedback`.
 - Use explicit `type` declarations in `@Prop(...)`. Do not rely on implicit inference when the field shape matters.
+- For Mongoose runtime schema type declarations, import `Schema as MongooseSchema` and `Types` from `mongoose`; use `MongooseSchema.Types.*` inside `@Prop({ type: ... })`, and use `Types.*` for TypeScript property types.
 - Prefer top-level schemas with `@Schema({ timestamps: true })`.
 - Use embedded schemas with `@Schema({ _id: false })` when the subdocument should not have its own identity.
 
@@ -415,6 +416,7 @@ src/
 - Name parent-reference fields explicitly as `<parent>Id`, such as `eventId`, `provisionId`, `participantId`, `workshopId`, or `attendanceId`.
 - Define refs explicitly with `ref: "<ModelName>"`.
 - Use UUID fields for idempotency keys and special internal identifiers where appropriate.
+- For UUID fields, use `MongooseSchema.Types.UUID` as the stored schema type and expose app-facing fields as `string` or `string | undefined`.
 - Keep hidden internal identifiers such as idempotency keys and private codes as `select: false` when they should not be returned by default.
 - Prefer explicit parent-scoped queries over global lookups.
 - Prefer refs plus service-level loading over `populate`-heavy design.
@@ -426,7 +428,7 @@ src/
 - Use `type: [SubSchema]` for ordered embedded collections when item structure is known.
 - Use `type: Map` only when the shape is truly dynamic and keyed by runtime-defined field names.
 - When storing dynamic values, use `Map` with an explicit `of` schema where possible.
-- Use `SchemaTypes.Mixed` only for the truly variable leaf values that cannot be modeled more precisely.
+- Use `MongooseSchema.Types.Mixed` only for the truly variable leaf values that cannot be modeled more precisely.
 - Do not default to `Mixed` or loose maps when a concrete schema is practical.
 
 ### Validation Placement

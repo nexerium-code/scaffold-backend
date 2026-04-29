@@ -18,6 +18,7 @@ alwaysApply: true
 - Top-level models: NestJS Mongoose **classes** with `@Schema()` and `@Prop()`. Export `HydratedDocument<T>`. Export schema with `SchemaFactory.createForClass`. One main schema per file; tiny **local** embedded helper schemas in the same file are OK if tightly coupled.
 - Class names: singular for aggregates, e.g. `Event`, `Provision`, `Participant`, `Workshop`, `Feedback`.
 - Use **explicit** `type` in `@Prop()` when the shape matters; do not rely on fragile inference. Prefer `@Schema({ timestamps: true })` on top-level. Embedded schemas: `@Schema({ _id: false })` when the subdoc should not have its own id.
+- For Mongoose runtime schema type declarations, import `Schema as MongooseSchema` and `Types` from `mongoose`; use `MongooseSchema.Types.*` inside `@Prop({ type: ... })`, and use `Types.*` for TypeScript property types.
 
 ## Field design
 
@@ -25,11 +26,11 @@ alwaysApply: true
 
 ## IDs, references, and relationships
 
-- Use Mongo `ObjectId` refs between aggregates/major children unless a different id type is clearly justified. Parent refs named `<parent>Id` (e.g. `eventId`, `provisionId`, `workshopId`). Set `ref: "<ModelName>"` explicitly. UUID fields for idempotency keys and special internal ids where appropriate. `select: false` for sensitive internal fields (e.g. idempotency keys) when they must not appear in default reads. **Prefer parent-scoped queries** over global lookups. Prefer explicit loads in services over **populate**-heavy designs. Do not default to populate, virtual populate, or autopopulate.
+- Use Mongo `ObjectId` refs between aggregates/major children unless a different id type is clearly justified. Parent refs named `<parent>Id` (e.g. `eventId`, `provisionId`, `workshopId`). Set `ref: "<ModelName>"` explicitly. UUID fields use `MongooseSchema.Types.UUID` as the stored schema type and expose app-facing fields as `string` or `string | undefined`. `select: false` for sensitive internal fields (e.g. idempotency keys) when they must not appear in default reads. **Prefer parent-scoped queries** over global lookups. Prefer explicit loads in services over **populate**-heavy designs. Do not default to populate, virtual populate, or autopopulate.
 
 ## Embedded vs dynamic
 
-- **Embedded** sub-schemas for tightly owned structures without their own lifecycle (entries, categories, targets, date ranges, form items). `type: [SubSchema]` for ordered arrays with known item shape. `type: Map` only for truly dynamic keys. For dynamic values, `Map` with explicit `of` when possible. `SchemaTypes.Mixed` only for variable leaf values that cannot be modeled otherwise; do not default to Mixed.
+- **Embedded** sub-schemas for tightly owned structures without their own lifecycle (entries, categories, targets, date ranges, form items). `type: [SubSchema]` for ordered arrays with known item shape. `type: Map` only for truly dynamic keys. For dynamic values, `Map` with explicit `of` when possible. `MongooseSchema.Types.Mixed` only for variable leaf values that cannot be modeled otherwise; do not default to Mixed.
 
 ## Validation layers
 

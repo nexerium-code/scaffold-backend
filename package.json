@@ -20,10 +20,10 @@
         "test:e2e": "jest --config ./test/jest-e2e.json"
     },
     "dependencies": {
-        "@ai-sdk/openai": "^3.0.53",
-        "@aws-sdk/client-s3": "^3.1037.0",
-        "@aws-sdk/client-sqs": "^3.1037.0",
-        "@aws-sdk/s3-request-presigner": "^3.1037.0",
+        "@ai-sdk/openai": "^3.0.54",
+        "@aws-sdk/client-s3": "^3.1038.0",
+        "@aws-sdk/client-sqs": "^3.1038.0",
+        "@aws-sdk/s3-request-presigner": "^3.1038.0",
         "@nestjs/common": "^11.1.19",
         "@nestjs/config": "^4.0.4",
         "@nestjs/core": "^11.1.19",
@@ -35,16 +35,16 @@
         "@nestjs/platform-express": "^11.1.19",
         "@nestjs/throttler": "^6.5.0",
         "@sentry/nestjs": "^10.50.0",
-        "ai": "^6.0.168",
+        "ai": "^6.0.169",
         "axios": "^1.15.2",
         "bcrypt": "^6.0.0",
         "class-transformer": "^0.5.1",
-        "class-validator": "^0.14.4",
+        "class-validator": "^0.15.1",
         "cookie-parser": "^1.4.7",
         "date-fns-tz": "^3.2.0",
         "helmet": "^8.1.0",
         "mongodb": "^7.2.0",
-        "mongoose": "^8.23.1",
+        "mongoose": "^9.6.0",
         "passport": "^0.7.0",
         "passport-jwt": "^4.0.1",
         "reflect-metadata": "^0.2.2",
@@ -53,7 +53,7 @@
         "zod": "^4.3.6"
     },
     "devDependencies": {
-        "@eslint/js": "^9.39.4",
+        "@eslint/js": "^10.0.1",
         "@nestjs/cli": "^11.0.21",
         "@nestjs/schematics": "^11.1.0",
         "@nestjs/testing": "^11.1.19",
@@ -63,7 +63,7 @@
         "@types/jest": "^30.0.0",
         "@types/node": "^24.12.2",
         "@types/passport-jwt": "^4.0.1",
-        "eslint": "^9.39.4",
+        "eslint": "^10.2.1",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.5",
         "globals": "^17.5.0",
@@ -74,8 +74,8 @@
         "ts-loader": "^9.5.7",
         "ts-node": "^10.9.2",
         "tsconfig-paths": "^4.2.0",
-        "typescript": "^5.9.3",
-        "typescript-eslint": "^8.59.0"
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.59.1"
     },
     "jest": {
         "moduleFileExtensions": [

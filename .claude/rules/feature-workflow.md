@@ -52,7 +52,7 @@ File: `src/modules/<feature>/schemas/<feature>.schema.ts`
 | Fields              | `@Prop({ type: ..., required: [true, "kebab-case-message"], ... })` for each persisted field. Explicit `type` always.  |
 | Document type       | Export `export type <Entity>Document = HydratedDocument<<Entity>>`.                                                    |
 | Factory             | Export `export const <Entity>Schema = SchemaFactory.createForClass(<Entity>)`.                                         |
-| Parent refs         | Use `@Prop({ type: Types.ObjectId, ref: "<ParentEntity>", required: [true, "..."] })`. Name the field `<parent>Id`.    |
+| Parent refs         | Use `@Prop({ type: MongooseSchema.Types.ObjectId, ref: "<ParentEntity>", required: [true, "..."] })`. Name the field `<parent>Id`; use `Types.ObjectId` for the TypeScript property type. |
 | Embedded schemas    | Separate `@Schema({ _id: false })` class, referenced as `@Prop({ type: [SubSchema], default: [] })`.                   |
 | Indexes             | Add `<Entity>Schema.index({ ... }, { unique: ... })` after the factory call. Compound indexes live next to the schema. |
 | Validation messages | All `required` tuples and `validate.message` strings are **kebab-case**.                                               |

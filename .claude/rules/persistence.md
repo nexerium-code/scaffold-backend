@@ -20,6 +20,7 @@ Do not introduce Prisma, TypeORM, Sequelize, Drizzle, raw SQL, or a second ORM s
 - Top-level schemas use `@Schema({ timestamps: true })` — `createdAt` and `updatedAt` are part of the project standard.
 - Embedded subdocument schemas use `@Schema({ _id: false })` when the subdoc should not carry its own identity.
 - Always use **explicit `type`** in `@Prop(...)`. Do not rely on implicit inference when field shape matters.
+- For Mongoose runtime schema type declarations, import `Schema as MongooseSchema` and `Types` from `mongoose`; use `MongooseSchema.Types.*` inside `@Prop({ type: ... })`, and use `Types.*` for TypeScript property types.
 
 ### 2.1 Required export shape
 
@@ -32,7 +33,7 @@ export class Event {
     @Prop({ type: String, enum: EventType, required: [true, "please-provide-event-type"] })
     type: EventType;
 
-    @Prop({ type: Types.ObjectId, ref: "Organizer", required: [true, "organizer-id-required"] })
+    @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Organizer", required: [true, "organizer-id-required"] })
     organizerId: Types.ObjectId;
 
     @Prop({ type: String, required: true, select: false })
@@ -71,8 +72,8 @@ Every persisted field has an intentional shape, validation, and default.
 
 - **Primary IDs** are Mongo `ObjectId`s unless there is a clear, justified reason to use a different type.
 - **Parent-reference fields** are named `<parent>Id` exactly: `eventId`, `workshopId`, `participantId`, `provisionId`, `attendanceId`. No variations (`event_id`, `eventID`, `parent`, `parentEvent`).
-- Parent refs declare `ref` explicitly: `@Prop({ type: Types.ObjectId, ref: "Event", required: [true, "..."] })`.
-- **UUIDs** are acceptable for idempotency keys and special internal identifiers.
+- Parent refs declare `ref` explicitly: `@Prop({ type: MongooseSchema.Types.ObjectId, ref: "Event", required: [true, "..."] })`.
+- **UUIDs** are acceptable for idempotency keys and special internal identifiers. Use `MongooseSchema.Types.UUID` as the stored schema type and expose app-facing fields as `string` or `string | undefined`.
 - **`select: false`** on hidden identifiers (idempotency keys, private codes) so they do not appear in default reads.
 - **Prefer parent-scoped queries** (`{ _id: childId, parentId }`) over unconstrained global lookups.
 - **Prefer explicit loads in services** over `populate`-heavy designs.
@@ -83,7 +84,7 @@ Every persisted field has an intentional shape, validation, and default.
 - **Embedded subdocument schemas** for tightly owned nested structures with no independent lifecycle: entries, categories, targets, date ranges, form items, settings snapshots.
 - **`type: [SubSchema]`** for ordered embedded collections with a known item shape.
 - **`type: Map`** only when the shape is truly dynamic and keyed by runtime-defined field names. Use `Map` with an explicit `of` schema where possible.
-- **`SchemaTypes.Mixed`** only for truly variable leaf values that cannot be modeled more precisely.
+- **`MongooseSchema.Types.Mixed`** only for truly variable leaf values that cannot be modeled more precisely.
 - Do not default to `Mixed` or loose `Map` when a concrete schema is practical.
 
 ## 6 — Validation layers
